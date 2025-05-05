@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Transcriber</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #transcription {
+            white-space: pre-wrap;
+            background-color: white;
+            padding: 15px;
+            border: 1px solid #ddd;
+            min-height: 100px;
+            margin-top: 10px;
+        }
+        #error {
+            color: red;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>YouTube Video Transcriber</h1>
+    <input type="text" id="youtubeUrl" placeholder="Enter YouTube URL (e.g., https://www.youtube.com/watch?v=...)">
+    <button onclick="transcribe()">Transcribe</button>
+    <div id="error"></div>
+    <div id="transcription">Transcription will appear here...</div>
+
+    <script>
+        async function transcribe() {
+            const url = document.getElementById('youtubeUrl').value;
+            const transcriptionDiv = document.getElementById('transcription');
+            const errorDiv = document.getElementById('error');
+
+            // Reset previous content
+            transcriptionDiv.textContent = 'Processing...';
+            errorDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/transcribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    transcriptionDiv.textContent = data.transcription;
+                } else {
+                    throw new Error(data.detail || 'Failed to transcribe');
+                }
+            } catch (error) {
+                errorDiv.textContent = `Error: ${error.message}`;
+                errorDiv.style.display = 'block';
+                transcriptionDiv.textContent = 'Transcription failed.';
+            }
+        }
+    </script>
+</body>
+</html>
