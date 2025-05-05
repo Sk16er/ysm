@@ -4,63 +4,90 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube Transcriber</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f0f0f0;
+        /* Fade-in animation for transcription */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
-        h1 {
-            text-align: center;
-            color: #333;
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
         }
-        input, button {
-            padding: 10px;
-            margin: 10px 0;
-            width: 100%;
-            box-sizing: border-box;
+        /* Spinner animation */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #transcription {
-            white-space: pre-wrap;
-            background-color: white;
-            padding: 15px;
-            border: 1px solid #ddd;
-            min-height: 100px;
-            margin-top: 10px;
-        }
-        #error {
-            color: red;
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #4CAF50;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
             display: none;
         }
     </style>
 </head>
-<body>
-    <h1>YouTube Video Transcriber</h1>
-    <input type="text" id="youtubeUrl" placeholder="Enter YouTube URL (e.g., https://www.youtube.com/watch?v=...)">
-    <button onclick="transcribe()">Transcribe</button>
-    <div id="error"></div>
-    <div id="transcription">Transcription will appear here...</div>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-2xl w-full bg-white rounded-lg shadow-lg p-6">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">YouTube Video Transcriber</h1>
+        
+        <!-- Input and Button -->
+        <div class="flex flex-col sm:flex-row gap-2 mb-4">
+            <input 
+                type="text" 
+                id="youtubeUrl" 
+                placeholder="Enter YouTube URL (e.g., https://www.youtube.com/watch?v=...)" 
+                class="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+            <button 
+                onclick="transcribe()" 
+                class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition duration-300"
+            >
+                Transcribe
+            </button>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error" class="hidden bg-red-100 text-red-700 p-3 rounded-lg mb-4"></div>
+
+        <!-- Transcription Area -->
+        <div class="relative">
+            <div id="spinner" class="spinner absolute top-2 right-2"></div>
+            <div 
+                id="transcription" 
+                class="bg-gray-50 p-4 rounded-lg border min-h-[150px] whitespace-pre-wrap text-gray-700"
+            >
+                Transcription will appear here...
+            </div>
+        </div>
+
+        <!-- Copy Button (Hidden until transcription appears) -->
+        <button 
+            id="copyButton" 
+            class="hidden mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300"
+            onclick="copyTranscription()"
+        >
+            Copy Transcription
+        </button>
+    </div>
 
     <script>
         async function transcribe() {
             const url = document.getElementById('youtubeUrl').value;
             const transcriptionDiv = document.getElementById('transcription');
             const errorDiv = document.getElementById('error');
+            const spinner = document.getElementById('spinner');
+            const copyButton = document.getElementById('copyButton');
 
-            // Reset previous content
+            // Reset UI
             transcriptionDiv.textContent = 'Processing...';
-            errorDiv.style.display = 'none';
+            transcriptionDiv.classList.remove('fade-in');
+            errorDiv.classList.add('hidden');
+            spinner.style.display = 'block';
+            copyButton.classList.add('hidden');
 
             try {
                 const response = await fetch('http://127.0.0.1:8000/transcribe', {
@@ -75,14 +102,27 @@
 
                 if (response.ok) {
                     transcriptionDiv.textContent = data.transcription;
+                    transcriptionDiv.classList.add('fade-in');
+                    copyButton.classList.remove('hidden');
                 } else {
                     throw new Error(data.detail || 'Failed to transcribe');
                 }
             } catch (error) {
                 errorDiv.textContent = `Error: ${error.message}`;
-                errorDiv.style.display = 'block';
+                errorDiv.classList.remove('hidden');
                 transcriptionDiv.textContent = 'Transcription failed.';
+            } finally {
+                spinner.style.display = 'none';
             }
+        }
+
+        function copyTranscription() {
+            const transcription = document.getElementById('transcription').textContent;
+            navigator.clipboard.writeText(transcription).then(() => {
+                alert('Transcription copied to clipboard!');
+            }).catch(() => {
+                alert('Failed to copy transcription.');
+            });
         }
     </script>
 </body>
