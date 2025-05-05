@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Transcriber</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+            position: relative;
+            overflow: hidden;
+        }
+        .card {
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(180deg, transparent, rgba(255, 0, 0, 0.4));
+            filter: blur(12px);
+            z-index: -1;
+        }
+        .card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            box-shadow: 0 0 25px rgba(255, 0, 0, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.5);
+            z-index: -1;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 10px rgba(255, 0, 0, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.7); }
+            100% { box-shadow: 0 0 10px rgba(255, 0, 0, 0.3); }
+        }
+        @keyframes scalePop {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes logoGlow {
+            0% { filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.3)); }
+            50% { filter: drop-shadow(0 0 15px rgba(255, 0, 0, 0.8)); }
+            100% { filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.3)); }
+        }
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        .pulse-glow {
+            animation: pulseGlow 2s infinite;
+        }
+        .pop-in {
+            animation: scalePop 0.3s ease-out;
+        }
+        .logo-glow {
+            animation: logoGlow 1.5s infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            border: 4px solid rgba(255, 0, 0, 0.2);
+            border-left-color: #ff0000;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+        .btn-red {
+            background: #ff0000;
+            transition: all 0.3s ease;
+        }
+        .btn-red:hover {
+            background: #cc0000;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.5);
+        }
+        .typewriter {
+            overflow: hidden;
+            white-space: pre-wrap;
+            animation: typing 2s steps(40, end);
+        }
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        .youtube-logo {
+            width: 40px;
+            height: 40px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-4xl w-full card rounded-xl p-10">
+        <h1 class="text-5xl font-bold text-center text-red-600 mb-8 flex items-center justify-center gap-3">
+            <img src="https://www.youtube.com/favicon.ico" alt="YouTube Logo" class="youtube-logo logo-glow">
+            YouTube Transcriber
+        </h1>
+        
+        <!-- Input and Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 mb-8">
+            <div class="relative flex-1">
+                <input 
+                    type="text" 
+                    id="youtubeUrl" 
+                    placeholder="Enter YouTube URL" 
+                    class="w-full p-4 pr-12 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white text-gray-800 text-lg"
+                >
+                <button 
+                    onclick="pasteUrl()" 
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-red-600 hover:text-red-800"
+                    title="Paste URL"
+                >
+                    <i class="fas fa-paste text-xl"></i>
+                </button>
+            </div>
+            <button 
+                onclick="transcribe()" 
+                class="btn-red text-white px-8 py-4 rounded-lg font-semibold text-lg"
+            >
+                Transcribe
+            </button>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error" class="hidden bg-red-100 text-red-800 p-5 rounded-lg mb-8 font-medium text-lg"></div>
+
+        <!-- Transcription Area -->
+        <div class="relative">
+            <div id="spinner" class="spinner absolute top-4 right-4"></div>
+            <div 
+                id="transcription" 
+                class="bg-white p-6 rounded-lg border border-red-200 min-h-[200px] whitespace-pre-wrap text-gray-800 shadow-inner text-lg"
+            >
+                Transcription will appear here...
+            </div>
+        </div>
+
+        <!-- Copy Button -->
+        <button 
+            id="copyButton" 
+            class="hidden mt-8 btn-red text-white px-6 py-3 rounded-lg font-semibold w-full sm:w-auto pop-in text-lg"
+            onclick="copyTranscription()"
+        >
+            <i class="fas fa-copy mr-2"></i> Copy Transcription
+        </button>
+    </div>
+
+    <script>
+        async function transcribe() {
+            const url = document.getElementById('youtubeUrl').value;
+            const transcriptionDiv = document.getElementById('transcription');
+            const errorDiv = document.getElementById('error');
+            const spinner = document.getElementById('spinner');
+            const copyButton = document.getElementById('copyButton');
+
+            transcriptionDiv.textContent = 'Processing...';
+            transcriptionDiv.classList.remove('typewriter', 'pulse-glow', 'fade-in');
+            errorDiv.classList.add('hidden');
+            spinner.style.display = 'block';
+            copyButton.classList.add('hidden');
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/transcribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    transcriptionDiv.textContent = data.transcription;
+                    transcriptionDiv.classList.add('typewriter', 'pulse-glow', 'fade-in');
+                    copyButton.classList.remove('hidden');
+                } else {
+                    throw new Error(data.detail || 'Failed to transcribe');
+                }
+            } catch (error) {
+                errorDiv.textContent = `Error: ${error.message}`;
+                errorDiv.classList.remove('hidden');
+                transcriptionDiv.textContent = 'Transcription failed.';
+            } finally {
+                spinner.style.display = 'none';
+            }
+        }
+
+        async function pasteUrl() {
+            try {
+                const url = await navigator.clipboard.readText();
+                document.getElementById('youtubeUrl').value = url;
+            } catch (error) {
+                alert('Failed to paste URL.');
+            }
+        }
+
+        function copyTranscription() {
+            const transcription = document.getElementById('transcription').textContent;
+            navigator.clipboard.writeText(transcription).then(() => {
+                alert('Transcription copied to clipboard!');
+            }).catch(() => {
+                alert('Failed to copy transcription.');
+            });
+        }
+    </script>
+</body>
+</html>
